@@ -1,0 +1,109 @@
+# Simulation & validation
+
+Because real datasets never come with a ground truth, `codiv` includes
+[`simulate_codiv_data()`](https://www.sprockettlab.com/codiv/reference/simulate_codiv_data.md)
+to build host/symbiont datasets where you *know* which clades
+co-diversified. This is the basis for checking that the scan recovers
+true signal and for calibrating false discovery with
+[`codiv_null_scans()`](https://www.sprockettlab.com/codiv/reference/codiv_null_scans.md).
+
+## Simulating data with a known truth
+
+``` r
+
+library(codiv)
+
+sim <- simulate_codiv_data(n_hosts = 10, n_clades = 3, seed = 1)
+names(sim)
+#> [1] "host_tree"     "symbiont_tree" "links"         "truth"
+```
+
+`sim` contains a `host_tree`, a `symbiont_tree`, a `links` table, and a
+`truth` table recording, for every simulated symbiont, which clade it
+belongs to and whether that clade was generated to co-diversify:
+
+``` r
+
+# one row per clade: is it co-diversifying, and how congruent with the host tree?
+truth_by_clade <- unique(sim$truth[, c("clade", "codiversifying", "congruence")])
+truth_by_clade
+#>    clade codiversifying congruence
+#> 1     c1           TRUE  0.6223986
+#> 11    c2           TRUE  0.6581359
+#> 31    c3          FALSE  0.7034151
+```
+
+You control the design directly — number of hosts and clades, the
+proportion of clades that co-diversify, how congruent they are, how many
+symbionts per host, and the amount of branch-length noise. Passing an
+explicit `clades` list gives per-clade control:
+
+``` r
+
+sim <- simulate_codiv_data(
+  n_hosts = 12,
+  clades = list(
+    list(codiversifying = TRUE,  congruence = 1.0, n_per_host = 2),
+    list(codiversifying = TRUE,  congruence = 0.7, n_per_host = 1),
+    list(codiversifying = FALSE)                       # random association
+  ),
+  seed = 42
+)
+```
+
+## Does the scan recover the signal?
+
+``` r
+
+codiv_results <- codiv(sim$host_tree, sim$symbiont_tree, sim$links,
+                       methods = "hommola", permutations = 99, verbose = FALSE)
+summary(codiv_results)
+#> codiv summary: 5 nodes, per-node p < 0.05 
+#> 
+#>   method statistic   stat_min stat_median  stat_max n_sig_p n_nodes
+#>  hommola Hommola_r -0.4922685  -0.2492913 0.5514694       0       5
+```
+
+Nodes drawn from co-diversifying clades should show high `Hommola_r` and
+low p-values, while nodes from the randomly-associated clade should not.
+
+## Scan-wide false-discovery control
+
+A whole-scan question — *are there more significant clades than chance
+would produce?* — cannot be answered by correcting per-node p-values,
+because nested clades are not independent.
+[`codiv_null_scans()`](https://www.sprockettlab.com/codiv/reference/codiv_null_scans.md)
+instead permutes the host tip labels, reruns the entire scan, and builds
+a null distribution for the *number* of significant clades:
+
+``` r
+
+null <- codiv_null_scans(
+  sim$host_tree, sim$symbiont_tree, sim$links,
+  n_permutations = 20,             # host-label permutations (outer null)
+  stat_threshold = 0.75,           # r > 0.75 ...
+  p_threshold    = 0.01,           # ... and p < 0.01 define "co-diversifying"
+  min_symbiont_tips = 7, span_fraction = 0.6,
+  permutations = 99, methods = "hommola",
+  verbose = FALSE
+)
+
+null$observed         # significant clades in the real data
+#> [1] 0
+mean(null$null_counts) # expected under permuted host labels
+#> [1] 0
+null$global_pvalue    # is the scan more co-diversifying than chance?
+#> [1] 1
+null$empirical_fdr    # expected false-discovery proportion at these thresholds
+#> [1] NA
+```
+
+Because each permutation reruns the full pipeline, the null captures
+exactly the dependence structure that a per-node correction ignores.
+This is the recommended way to report significance for a scan (see also
+[Sanders et
+al. 2023](https://www.nature.com/articles/s41564-023-01388-w)).
+
+For serious calibration work, raise `n_permutations` (the outer null)
+and `permutations` (the inner per-node null) and spread the work across
+`cores`.
