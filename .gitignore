@@ -1,0 +1,22 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+inst/doc
+docs
+
+.DS_Store
+Rplots.pdf
+/doc/
+/Meta/
+/figure/
+
+# R build / check artifacts
+/..Rcheck/
+/*.Rcheck/
+/*.tar.gz
+README.html
+
+# project-specific scratch analyses (not part of the package)
+dev/codiv_bac120_v1.Rmd

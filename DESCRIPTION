@@ -1,0 +1,37 @@
+Package: codiv
+Title: Host-Microbe Codiversification Analysis
+Version: 0.1.0
+Authors@R:
+    person("Daniel", "Sprockett", , "daniel.sprockett@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-2620-7555"))
+Description: Performs codiversification scans between pairs of host and symbiont
+    phylogenetic trees using multiple statistical methods (Hommola, PACo, ParaFit).
+    For each internal node of the symbiont tree, calculates correlation coefficients
+    and computes p-values via permutation testing to assess whether symbiont topology
+    matches host topology. High correlation at a node indicates codiversification
+    between hosts and those symbionts. Includes functions for leave-one-host-out
+    analysis, parameter sensitivity assessment, and tree visualization.
+    See Sprockett et al. (2025) <doi:10.1038/s41467-025-57435-z>.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    adephylo,
+    ape,
+    castor,
+    paco,
+    parallel,
+    pbmcapply,
+    scales,
+    TreeDist
+Suggests:
+    ggplot2,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+URL: https://github.com/SprockettLab/codiv,
+    https://www.sprockettlab.com/codiv/
+BugReports: https://github.com/SprockettLab/codiv/issues
+VignetteBuilder: knitr

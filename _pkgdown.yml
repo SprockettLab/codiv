@@ -1,0 +1,70 @@
+url: https://www.sprockettlab.com/codiv/
+
+template:
+  bootstrap: 5
+  bootswatch: morph
+
+home:
+  title: codiv - Host-Microbe Codiversification Analysis
+  description: >
+    Perform codiversification scans between phylogenetic trees of hosts and
+    their microbial symbionts using statistical methods including Hommola, PACo,
+    and ParaFit.
+
+navbar:
+  structure:
+    left:  [intro, reference, articles]
+    right: [search, github]
+  components:
+    articles:
+      text: Articles
+      menu:
+      - text: "Getting Started"
+        href: articles/codiv.html
+      - text: "-------"
+      - text: "Simulation & validation"
+        href: articles/simulation-and-validation.html
+      - text: "Secondary analyses"
+        href: articles/secondary-analyses.html
+
+reference:
+  - title: "Main Functions"
+    desc: "Core codiversification analysis"
+    contents:
+      - codiv
+      - check_inputs
+      - codiv_null_scans
+      - host_codiv_summary
+  - title: "Working with Results"
+    desc: "Methods for the codiv result object"
+    contents:
+      - print.codiv
+      - summary.codiv
+      - as.data.frame.codiv
+      - filter_results
+  - title: "Codiversification Methods"
+    desc: "Statistical methods used at each node"
+    contents:
+      - hommola
+      - hommola_wf
+      - paco_wf
+      - topology_wf
+  - title: "Helper Functions"
+    desc: "Tree and data manipulation utilities"
+    contents:
+      - collapse_monophyletic
+      - host_symbiont_links
+  - title: "Secondary Analyses"
+    desc: "Robustness, interpretation, and visualization"
+    contents:
+      - loo_host_analysis
+      - sensitivity_analysis
+      - molecular_clock
+      - plot_codiv_trees
+  - title: "Simulation"
+    desc: "Generate host/symbiont data with known co-diversification"
+    contents:
+      - simulate_codiv_data
+
+development:
+  mode: auto

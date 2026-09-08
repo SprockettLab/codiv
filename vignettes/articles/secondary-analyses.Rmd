@@ -1,0 +1,81 @@
+---
+title: "Secondary analyses"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 6, out.width = "100%")
+```
+
+Beyond the main scan, `codiv` provides functions for probing robustness, dating
+co-diversification events, and visualizing host–symbiont congruence. All build on
+a `codiv()` result, so they share its inputs and conventions.
+
+```{r}
+library(codiv)
+sim <- simulate_codiv_data(n_hosts = 10, n_clades = 3, seed = 1)
+```
+
+## Which hosts drive the signal? Leave-one-host-out
+
+`loo_host_analysis()` reruns the scan with each host removed in turn and reports
+how much each host changes the number of significant nodes — a large
+`impact_score` means the host contributes disproportionately to the signal.
+
+```{r}
+loo <- loo_host_analysis(sim$host_tree, sim$symbiont_tree, sim$links,
+                         permutations = 99, methods = "hommola", verbose = FALSE)
+loo$host_importance
+```
+
+## How sensitive are the results? Parameter sweeps
+
+`sensitivity_analysis()` reruns the scan across a grid of `span_fraction` and
+`min_symbiont_tips` values so you can see whether findings are stable or
+threshold-dependent.
+
+```{r}
+sens <- sensitivity_analysis(sim$host_tree, sim$symbiont_tree, sim$links,
+                             span_fraction_range = c(0.3, 0.6),
+                             min_symbiont_tips_range = c(7, 10),
+                             permutations = 99, methods = "hommola",
+                             verbose = FALSE)
+sens$sensitivity_data
+```
+
+## Dating co-diversification: the molecular clock
+
+For strongly co-diversifying clades, `molecular_clock()` regresses symbiont
+divergence against host clade age. A positive slope corroborates that symbiont
+clades diversified alongside their hosts, and the slope estimates the symbiont
+molecular rate (following
+[Sanders et al. 2023](https://www.nature.com/articles/s41564-023-01388-w)).
+
+```{r}
+clock_sim <- simulate_codiv_data(n_hosts = 14, clades = list(
+  list(codiversifying = TRUE, congruence = 1, n_per_host = 3)), seed = 1)
+codiv_results <- codiv(clock_sim$host_tree, clock_sim$symbiont_tree,
+                       clock_sim$links, span_fraction = 0.9, methods = "hommola",
+                       permutations = 199, verbose = FALSE)
+
+# the simulated host tree is ultrametric, so it stands in for a time-calibrated tree
+mc <- molecular_clock(codiv_results, clock_sim$host_tree, stat_threshold = 0.75)
+mc$slope
+mc$r_squared
+head(mc$per_clade)
+```
+
+## Visualizing congruence: tanglegrams
+
+`plot_codiv_trees()` draws the host and symbiont trees face to face with a line
+for each association — an intuitive read on how congruent they are. It returns a
+`ggplot` object you can style or save with `ggsave()`.
+
+```{r tanglegram}
+plot_codiv_trees(sim$host_tree, sim$symbiont_tree, sim$links)
+```
+
+By default a cladogram layout is used and the symbiont tree is rotated to reduce
+line crossings; set `use_branch_lengths = TRUE` to position nodes by branch
+length, or pass a `codiv_results` object with `color_by = "significance"` to
+highlight symbionts in significant clades.
